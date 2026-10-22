@@ -194,7 +194,7 @@ namespace CSserver_browser
 
             try
             {
-                using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) })
+                using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) })
                 {
                     string json = await client.GetStringAsync(url);
                     var remoteContainer = JsonSerializer.Deserialize<RemoteServerInternetContainer>(json);
@@ -240,13 +240,11 @@ namespace CSserver_browser
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                MessageBox.Show($"Server list not found on the server (404).\n\nURL: {url}",
-                    "Server Update Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                SetMessage("Remote server list returned 404; using the cached list.", Color.Orange);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to download server list:\n{ex.Message}\n\nURL: {url}",
-                    "Server Update Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                SetMessage($"Remote server list unavailable; using cached data. {ex.Message}", Color.Orange);
             }
         }
 
@@ -297,13 +295,11 @@ namespace CSserver_browser
             }
             catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                MessageBox.Show($"Workshop maps file not found on the server (404).\n\nURL: {url}",
-                    "Workshop Update Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                SetMessage("Remote workshop list returned 404; keeping the local list.", Color.Orange);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to download workshop maps:\n{ex.Message}\n\nURL: {url}",
-                    "Workshop Update Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                SetMessage($"Remote workshop list unavailable; keeping local data. {ex.Message}", Color.Orange);
             }
         }
 
@@ -315,7 +311,7 @@ namespace CSserver_browser
 
             try
             {
-                using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) })
+                using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) })
                 {
                     string text = await client.GetStringAsync(url);
                     string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "announcement.txt");
@@ -423,9 +419,7 @@ namespace CSserver_browser
             var filtered = new List<ServerConnectionData>();
             foreach (var server in snapshot)
             {
-                // فقط سرورهای آنلاین
-                if (server.Ping < 0) continue;
-
+                // Keep cached server entries visible even when the latest query failed.
                 if (string.IsNullOrEmpty(filter) ||
                     (server.Name?.ToLowerInvariant().Contains(filter) ?? false) ||
                     ($"{server.Ip}:{server.Port}".ToLowerInvariant().Contains(filter)) ||
@@ -972,15 +966,14 @@ namespace CSserver_browser
             bool isHistory = (lv == listViewHistory);
             foreach (var server in data)
             {
-                if (server.Ping < 0) continue; // فقط آنلاین
-
+                // Cached/offline entries stay selectable so the local proxy can still be started.
                 ListViewItem item = new ListViewItem(server.IsSecure ? "🛡️" : "");
                 item.SubItems.Add(server.HasPassword ? "🔒" : "");
                 item.SubItems.Add(server.Name ?? "Unknown");
                 item.SubItems.Add($"{server.Ip}:{server.Port}");
                 item.SubItems.Add($"{server.Players}/{server.MaxPlayers}");
                 item.SubItems.Add(server.Map ?? "Unknown");
-                item.SubItems.Add(server.Ping.ToString());
+                item.SubItems.Add(server.Ping >= 0 ? server.Ping.ToString() : "—");
                 item.SubItems.Add(server.TickRate > 0 ? server.TickRate.ToString() : "-");
                 item.SubItems.Add(server.Tags ?? "Official");
 
@@ -1163,11 +1156,12 @@ namespace CSserver_browser
 
             if (fetchRemote)
             {
-                if (string.IsNullOrEmpty(appSettings.ServerUpdateUrl) &&
-                    string.IsNullOrEmpty(appSettings.WorkshopMapUpdateUrl))
+                if (string.IsNullOrWhiteSpace(appSettings.ServerUpdateUrl) &&
+                    string.IsNullOrWhiteSpace(appSettings.WorkshopMapUpdateUrl) &&
+                    string.IsNullOrWhiteSpace(appSettings.AnnouncementUrl))
                 {
-                    SetMessage("No remote URLs configured. Please check settings.");
-                    return;
+                    // Remote sources are optional. Continue with the local cached list below.
+                    SetMessage("Remote URLs are not configured; using cached data.");
                 }
 
                 toolStripProgressBar.Visible = true;
@@ -1218,8 +1212,13 @@ namespace CSserver_browser
 
             foreach (var server in dataList.ToList())
             {
-                ct.ThrowIfCancellationRequested();
-                await semaphore.WaitAsync(ct);
+                if (ct.IsCancellationRequested) break;
+                await semaphore.WaitAsync();
+                if (ct.IsCancellationRequested)
+                {
+                    semaphore.Release();
+                    break;
+                }
                 tasks.Add(Task.Run(async () =>
                 {
                     try
@@ -1261,14 +1260,20 @@ namespace CSserver_browser
                     catch (OperationCanceledException) { }
                     catch { server.Ping = -1; }
                     finally { semaphore.Release(); }
-                }, ct));
+                }));
             }
 
             try { await Task.WhenAll(tasks); }
             catch (OperationCanceledException) { }
             catch (AggregateException ae) { ae.Handle(ex => ex is OperationCanceledException); }
 
-            if (ct.IsCancellationRequested) return;
+            if (ct.IsCancellationRequested)
+            {
+                _ignoreSearchTextChanged = false;
+                btnRefresh.Enabled = true;
+                UpdateServerCount();
+                return;
+            }
 
             RefreshListView(currentLv, dataList);
 
