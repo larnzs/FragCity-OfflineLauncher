@@ -303,7 +303,7 @@ namespace CSserver_browser
         private void LoadMapList()
         {
             if (string.IsNullOrEmpty(workshopFolder)) return;
-            string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "workshop_maps.json");
+            string jsonPath = AppDataPaths.GetFilePath("workshop_maps.json");
             if (!File.Exists(jsonPath))
             {
                 MessageBox.Show($"workshop_maps.json not found at:\n{jsonPath}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -511,12 +511,12 @@ namespace CSserver_browser
 
         private void StartDownload(WorkshopMapItem map)
         {
-            if (string.IsNullOrEmpty(map.DownloadUrl))
+            if (string.IsNullOrWhiteSpace(map.DownloadUrl))
             {
                 MessageBox.Show("No download URL available for this map.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            if (string.IsNullOrEmpty(workshopFolder))
+            if (string.IsNullOrWhiteSpace(workshopFolder))
             {
                 MessageBox.Show("Load a workshop folder first.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -528,32 +528,44 @@ namespace CSserver_browser
             progressBar.Value = 0;
             lblProgress.Text = "Downloading...";
 
+            cts?.Cancel();
             cts = new CancellationTokenSource();
             var token = cts.Token;
 
-            Task.Run(async () =>
+            // Always run the delegate so its finally block can restore the UI.
+            _ = Task.Run(async () =>
             {
+                string tempZip = null;
+                string stagingPath = null;
+                string backupPath = null;
+                string destPath = null;
+
                 try
                 {
-                    string tempZip = Path.GetTempFileName();
-                    using (var client = new HttpClient())
+                    tempZip = Path.GetTempFileName();
+
+                    using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) })
+                    using (var response = await client.GetAsync(
+                        map.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, token))
                     {
-                        var response = await client.GetAsync(map.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, token);
                         response.EnsureSuccessStatusCode();
                         long? totalBytes = response.Content.Headers.ContentLength;
-                        using (var stream = await response.Content.ReadAsStreamAsync())
+
+                        using (var stream = await response.Content.ReadAsStreamAsync(token))
                         using (var fileStream = File.Create(tempZip))
                         {
                             byte[] buffer = new byte[8192];
                             long totalRead = 0;
                             int bytesRead;
-                            while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, token)) != 0)
+
+                            while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), token)) != 0)
                             {
-                                await fileStream.WriteAsync(buffer, 0, bytesRead, token);
+                                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), token);
                                 totalRead += bytesRead;
-                                if (totalBytes.HasValue)
+
+                                if (totalBytes.HasValue && totalBytes.Value > 0)
                                 {
-                                    int pct = (int)(totalRead * 100 / totalBytes.Value);
+                                    int pct = Math.Clamp((int)(totalRead * 100 / totalBytes.Value), 0, 100);
                                     this.Invoke(new Action(() =>
                                     {
                                         progressBar.Value = pct;
@@ -564,35 +576,66 @@ namespace CSserver_browser
                         }
                     }
 
-                    this.Invoke(new Action(() => lblProgress.Text = "Extracting..."));
-                    string destPath = Path.Combine(workshopFolder, "content", "730", map.WorkshopId.ToString());
-                    if (Directory.Exists(destPath)) Directory.Delete(destPath, true);
+                    token.ThrowIfCancellationRequested();
+                    this.Invoke(new Action(() => lblProgress.Text = "Extracting and validating..."));
+
+                    string workshopRoot = Path.Combine(workshopFolder, "content", "730");
+                    Directory.CreateDirectory(workshopRoot);
+                    destPath = Path.Combine(workshopRoot, map.WorkshopId.ToString());
+                    stagingPath = Path.Combine(workshopRoot, $"{map.WorkshopId}.staging-{Guid.NewGuid():N}");
+                    Directory.CreateDirectory(stagingPath);
+
+                    // Extract into a staging directory. Do not touch the current map
+                    // until the downloaded archive has been extracted successfully.
+                    ZipFile.ExtractToDirectory(tempZip, stagingPath);
+
+                    string innerDir = Path.Combine(stagingPath, map.WorkshopId.ToString());
+                    if (Directory.Exists(innerDir))
+                    {
+                        foreach (string entry in Directory.GetFileSystemEntries(innerDir))
+                        {
+                            string stagedEntry = Path.Combine(stagingPath, Path.GetFileName(entry));
+                            if (Directory.Exists(entry))
+                                Directory.Move(entry, stagedEntry);
+                            else
+                                File.Move(entry, stagedEntry);
+                        }
+
+                        Directory.Delete(innerDir);
+                    }
+
+                    token.ThrowIfCancellationRequested();
+
+                    // Atomic directory rename on the same volume keeps the old map
+                    // recoverable if promotion of the staged directory fails.
+                    if (Directory.Exists(destPath))
+                    {
+                        backupPath = Path.Combine(workshopRoot, $"{map.WorkshopId}.backup-{Guid.NewGuid():N}");
+                        Directory.Move(destPath, backupPath);
+                    }
 
                     try
                     {
-                        ZipFile.ExtractToDirectory(tempZip, destPath);
+                        Directory.Move(stagingPath, destPath);
+                        stagingPath = null;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        this.Invoke(new Action(() =>
-                            MessageBox.Show($"Extraction failed: {ex.Message}\nMake sure the file is a valid ZIP.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)));
-                        return;
-                    }
-                    finally
-                    {
-                        if (File.Exists(tempZip)) File.Delete(tempZip);
+                        if (!string.IsNullOrEmpty(backupPath) &&
+                            Directory.Exists(backupPath) &&
+                            !Directory.Exists(destPath))
+                        {
+                            Directory.Move(backupPath, destPath);
+                            backupPath = null;
+                        }
+                        throw;
                     }
 
-                    string innerDir = Path.Combine(destPath, map.WorkshopId.ToString());
-                    if (Directory.Exists(innerDir))
+                    if (!string.IsNullOrEmpty(backupPath) && Directory.Exists(backupPath))
                     {
-                        foreach (var entry in Directory.GetFileSystemEntries(innerDir))
-                        {
-                            string destEntry = Path.Combine(destPath, Path.GetFileName(entry));
-                            if (Directory.Exists(entry)) Directory.Move(entry, destEntry);
-                            else File.Move(entry, destEntry);
-                        }
-                        Directory.Delete(innerDir);
+                        try { Directory.Delete(backupPath, recursive: true); }
+                        catch { /* A valid installation is already in place; leave backup for manual cleanup. */ }
+                        backupPath = null;
                     }
 
                     this.Invoke(new Action(() =>
@@ -603,7 +646,9 @@ namespace CSserver_browser
                         progressBar.Style = ProgressBarStyle.Continuous;
                         progressBar.Value = 100;
                         lblProgress.Text = "Download & install completed!";
-                        MessageBox.Show("Map downloaded and installed successfully.\nUse 'Install ACF' to update the ACF file separately.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show(
+                            "Map downloaded and installed successfully.\nUse 'Install ACF' to update the ACF file separately.",
+                            "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }));
                 }
                 catch (OperationCanceledException)
@@ -612,19 +657,48 @@ namespace CSserver_browser
                 }
                 catch (Exception ex)
                 {
-                    this.Invoke(new Action(() => MessageBox.Show($"Download failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                    this.Invoke(new Action(() =>
+                        MessageBox.Show($"Download/install failed: {ex.Message}\nThe previous map is preserved unless installation had already completed.",
+                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)));
                 }
                 finally
                 {
-                    this.Invoke(new Action(() =>
+                    try { if (!string.IsNullOrEmpty(tempZip) && File.Exists(tempZip)) File.Delete(tempZip); }
+                    catch { }
+
+                    try
                     {
-                        btnDownload.Enabled = true;
-                        btnStop.Enabled = false;
-                        btnInstallAcf.Enabled = true;
-                        progressBar.Style = ProgressBarStyle.Continuous;
-                    }));
+                        if (!string.IsNullOrEmpty(stagingPath) && Directory.Exists(stagingPath))
+                            Directory.Delete(stagingPath, recursive: true);
+                    }
+                    catch { }
+
+                    // If promotion failed after the old folder was moved, restore it.
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(backupPath) &&
+                            Directory.Exists(backupPath) &&
+                            !string.IsNullOrEmpty(destPath) &&
+                            !Directory.Exists(destPath))
+                        {
+                            Directory.Move(backupPath, destPath);
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        this.Invoke(new Action(() =>
+                        {
+                            btnDownload.Enabled = true;
+                            btnStop.Enabled = false;
+                            btnInstallAcf.Enabled = true;
+                            progressBar.Style = ProgressBarStyle.Continuous;
+                        }));
+                    }
+                    catch { /* The form may already be closing. */ }
                 }
-            }, token);
+            });
         }
 
         private void BtnStop_Click(object sender, EventArgs e) => cts?.Cancel();
