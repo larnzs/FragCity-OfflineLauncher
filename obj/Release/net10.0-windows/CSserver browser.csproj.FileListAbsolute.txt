@@ -1,0 +1,125 @@
+C:\CSserver browser v1.5\bin\Release\net10.0-windows\CSserver browser.exe
+C:\CSserver browser v1.5\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\CSserver browser v1.5\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\CSserver browser v1.5\bin\Release\net10.0-windows\CSserver browser.dll
+C:\CSserver browser v1.5\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver_browser.AppSettings.resources
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.dll
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\CSserver browser v1.5\obj\Release\net10.0-windows\ref\CSserver browser.dll
+C:\CSserver browser v2\bin\Release\net10.0-windows\CSserver browser.exe
+C:\CSserver browser v2\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\CSserver browser v2\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\CSserver browser v2\bin\Release\net10.0-windows\CSserver browser.dll
+C:\CSserver browser v2\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver_browser.Form1.resources
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver_browser.PlayersForm.resources
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.dll
+C:\CSserver browser v2\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\CSserver browser v2\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\CSserver browser v2\obj\Release\net10.0-windows\ref\CSserver browser.dll
+C:\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.exe
+C:\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.dll
+C:\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver_browser.Form1.resources
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver_browser.PlayersForm.resources
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver_browser.WorkshopMapsForm.resources
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.dll
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\FragCity.ir v1.4\obj\Release\net10.0-windows\ref\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.exe
+C:\Fragcity.ir app\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\Fragcity.ir app\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\Fragcity.ir app\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.4\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver_browser.Form1.resources
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver_browser.PlayersForm.resources
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver_browser.WorkshopMapsForm.resources
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\Fragcity.ir app\FragCity.ir v1.4\obj\Release\net10.0-windows\ref\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.5\bin\Release\net10.0-windows\CSserver browser.exe
+C:\Fragcity.ir app\FragCity.ir v1.5\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\Fragcity.ir app\FragCity.ir v1.5\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\Fragcity.ir app\FragCity.ir v1.5\bin\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.5\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver_browser.Form1.resources
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver_browser.PlayersForm.resources
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver_browser.WorkshopMapsForm.resources
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\Fragcity.ir app\FragCity.ir v1.5\obj\Release\net10.0-windows\ref\CSserver browser.dll
+C:\Fragcity.ir app\1.6\bin\Release\net10.0-windows\CSserver browser.exe
+C:\Fragcity.ir app\1.6\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\Fragcity.ir app\1.6\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\Fragcity.ir app\1.6\bin\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity.ir app\1.6\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver_browser.Form1.resources
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver_browser.PlayersForm.resources
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver_browser.UpdateForm.resources
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver_browser.WorkshopMapsForm.resources
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\Fragcity.ir app\1.6\obj\Release\net10.0-windows\ref\CSserver browser.dll
+C:\Fragcity\1.7\bin\Release\net10.0-windows\CSserver browser.exe
+C:\Fragcity\1.7\bin\Release\net10.0-windows\CSserver browser.deps.json
+C:\Fragcity\1.7\bin\Release\net10.0-windows\CSserver browser.runtimeconfig.json
+C:\Fragcity\1.7\bin\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity\1.7\bin\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver_browser.Form1.resources
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver_browser.PlayersForm.resources
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver_browser.UpdateForm.resources
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver_browser.WorkshopMapsForm.resources
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.csproj.GenerateResource.cache
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.GeneratedMSBuildEditorConfig.editorconfig
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.AssemblyInfoInputs.cache
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.AssemblyInfo.cs
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.csproj.CoreCompileInputs.cache
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.dll
+C:\Fragcity\1.7\obj\Release\net10.0-windows\refint\CSserver browser.dll
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.pdb
+C:\Fragcity\1.7\obj\Release\net10.0-windows\CSserver browser.genruntimeconfig.cache
+C:\Fragcity\1.7\obj\Release\net10.0-windows\ref\CSserver browser.dll

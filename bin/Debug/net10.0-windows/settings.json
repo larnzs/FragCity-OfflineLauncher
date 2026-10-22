@@ -1,0 +1,14 @@
+{
+  "GameQueryPort": 27015,
+  "LocalPort": 27016,
+  "ProxyPort": 27017,
+  "AutoRefresh": false,
+  "RefreshIntervalSeconds": 15,
+  "WorkshopPath": "E:\\SteamLibrary\\steamapps\\workshop",
+  "CurrentVersion": "1.6.0",
+  "VersionCheckUrl": "http://fragcity.ir/maps/lastest_version.json",
+  "ServerUpdateUrl": "http://fragcity.ir/maps/servers.json",
+  "WorkshopMapUpdateUrl": "http://fragcity.ir/maps/workshop_maps.json",
+  "AnnouncementUrl": "http://fragcity.ir/maps/announcement.txt",
+  "UpdateCheckUrl": ""
+}

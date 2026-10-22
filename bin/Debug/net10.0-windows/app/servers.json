@@ -1,0 +1,46 @@
+{
+  "Internet": [  
+      {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27015,
+      "ForwardingPort": 27016,
+      "ListeningPort": 27017
+    },
+    {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27025,
+      "ForwardingPort": 27026,
+      "ListeningPort": 27027
+    },
+    {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27035,
+      "ForwardingPort": 27036,
+      "ListeningPort": 27037
+    },
+    {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27045,
+      "ForwardingPort": 27046,
+      "ListeningPort": 27047
+    },
+    {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27055,
+      "ForwardingPort": 27056,
+      "ListeningPort": 27057
+    },
+    {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27065,
+      "ForwardingPort": 27066,
+      "ListeningPort": 27067
+    },
+    {
+      "TargetIp": "217.18.90.147",
+      "GameQueryPort": 27075,
+      "ForwardingPort": 27076,
+      "ListeningPort": 27077
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "X0qKR0BZSTE=",
+  "success": true,
+  "projectFilePath": "C:\\Fragcity\\1.7\\CSserver browser.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\larnz\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.6\\microsoft.net.illink.tasks.10.0.6.nupkg.sha512",
+    "C:\\Users\\larnz\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x86\\10.0.6\\microsoft.netcore.app.runtime.win-x86.10.0.6.nupkg.sha512",
+    "C:\\Users\\larnz\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x86\\10.0.6\\microsoft.windowsdesktop.app.runtime.win-x86.10.0.6.nupkg.sha512",
+    "C:\\Users\\larnz\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x86\\10.0.6\\microsoft.aspnetcore.app.runtime.win-x86.10.0.6.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,186 @@
+[
+  {
+    "WorkshopId": 3084291314,
+    "MapName": "aim_map",
+    "Size": 56376496,
+    "TimeUpdated": 1769437466,
+    "Manifest": "6371057592249351354",
+    "DownloadUrl": "http://fragcity.ir/maps/aim_map/3084291314.zip"
+  },
+  {
+    "WorkshopId": 3118710028,
+    "MapName": "aim_plywood",
+    "Size": 28176181,
+    "TimeUpdated": 1714686237,
+    "Manifest": "8703342910305810327",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3078701726,
+    "MapName": "aim_ak-colt_CS2",
+    "Size": 9000696,
+    "TimeUpdated": 1699643184,
+    "Manifest": "7620060992009490726",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3085962528,
+    "MapName": "aim_usp",
+    "Size": 0,
+    "TimeUpdated": 0,
+    "Manifest": "",
+    "DownloadUrl": "http://fragcity.ir/maps/aim_usp/3085962528.zip"
+  },
+  {
+    "WorkshopId": 3075996446,
+    "MapName": "aim_deagle",
+    "Size": 0,
+    "TimeUpdated": 0,
+    "Manifest": "",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3082605693,
+    "MapName": "1v1aim_map_longdustversion_d",
+    "Size": 0,
+    "TimeUpdated": 0,
+    "Manifest": "",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3071890065,
+    "MapName": "cs2_bloodstrike",
+    "Size": 14999045,
+    "TimeUpdated": 1699158051,
+    "Manifest": "3559478987305924115",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3104677430,
+    "MapName": "as_oilrig",
+    "Size": 44877736,
+    "TimeUpdated": 1714649814,
+    "Manifest": "3562539369248899241",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3215705579,
+    "MapName": "cs_assult_classic",
+    "Size": 97727968,
+    "TimeUpdated": 1712691153,
+    "Manifest": "8049355264049256046",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3213800338,
+    "MapName": "de_aztec_classic",
+    "Size": 290363358,
+    "TimeUpdated": 1712691807,
+    "Manifest": "2585131137784444946",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3078095785,
+    "MapName": "de_dust_classic",
+    "Size": 53439798,
+    "TimeUpdated": 1699592750,
+    "Manifest": "5179708634570829176",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3201205818,
+    "MapName": "de_dust2_classic",
+    "Size": 127423994,
+    "TimeUpdated": 1712102480,
+    "Manifest": "2374682358271719318",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3212419403,
+    "MapName": "cs_italy_classic",
+    "Size": 138578596,
+    "TimeUpdated": 1718925881,
+    "Manifest": "1775820551714097412",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3144773563,
+    "MapName": "cs_militia_classic",
+    "Size": 57086139,
+    "TimeUpdated": 1741107105,
+    "Manifest": "2049777593401034646",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3205793205,
+    "MapName": "de_nuke_classic",
+    "Size": 78379931,
+    "TimeUpdated": 1711759788,
+    "Manifest": "6862301514991745305",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3216844784,
+    "MapName": "cs_office_classic",
+    "Size": 52710265,
+    "TimeUpdated": 1712628163,
+    "Manifest": "577558424176013450",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3217247541,
+    "MapName": "de_survivor_classic_m",
+    "Size": 57353395,
+    "TimeUpdated": 1714109588,
+    "Manifest": "535014710922682751",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3072959547,
+    "MapName": "de_rats_1337",
+    "Size": 65140018,
+    "TimeUpdated": 1701963156,
+    "Manifest": "3385057653159850680",
+    "DownloadUrl": "http://fragcity.ir/maps/de_rats_1337/3072959547.zip"
+  },
+  {
+    "WorkshopId": 3070253400,
+    "MapName": "aim_redline_fp",
+    "Size": 113577269,
+    "TimeUpdated": 1699006107,
+    "Manifest": "3883650232523484714",
+    "DownloadUrl": "http://fragcity.ir/maps/aim_redline_fp/3070253400.zip"
+  },
+  {
+    "WorkshopId": 3628046675,
+    "MapName": "am_map2",
+    "Size": 114213427,
+    "TimeUpdated": 1771335086,
+    "Manifest": "8931883843961174313",
+    "DownloadUrl": "http://fragcity.ir/maps/3628046675.zip"
+  },
+  {
+    "WorkshopId": 3079692971,
+    "MapName": "de_aztec_hr",
+    "Size": 352240013,
+    "TimeUpdated": 1772311982,
+    "Manifest": "5304442640805700042",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3127729110,
+    "MapName": "de_dust_hr",
+    "Size": 297016918,
+    "TimeUpdated": 1738748517,
+    "Manifest": "2450067057800255287",
+    "DownloadUrl": ""
+  },
+  {
+    "WorkshopId": 3311527054,
+    "MapName": "de_dust2_unlimited_csgo",
+    "Size": 241585992,
+    "TimeUpdated": 1724418999,
+    "Manifest": "8430947289906492697",
+    "DownloadUrl": "http://fragcity.ir/maps/de_dut2_unlimited/3311527054.zip"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "WorkshopId": 3084291314,
+    "MapName": "aim_map",
+    "Size": 56376496,
+    "TimeUpdated": 1769437466,
+    "Manifest": "6371057592249351354",
+    "DownloadUrl": "http://fragcity.ir/maps/aim_map/3084291314.zip"
+  },
+  {
+    "WorkshopId": 3085962528,
+    "MapName": "aim_usp",
+    "Size": 0,
+    "TimeUpdated": 0,
+    "Manifest": "",
+    "DownloadUrl": "http://fragcity.ir/maps/aim_usp/3085962528.zip"
+  },
+  {
+    "WorkshopId": 3072959547,
+    "MapName": "de_rats_1337",
+    "Size": 65140018,
+    "TimeUpdated": 1701963156,
+    "Manifest": "3385057653159850680",
+    "DownloadUrl": "http://fragcity.ir/maps/de_rats_1337/3072959547.zip"
+  },
+  {
+    "WorkshopId": 3070253400,
+    "MapName": "aim_redline_fp",
+    "Size": 113577269,
+    "TimeUpdated": 1699006107,
+    "Manifest": "3883650232523484714",
+    "DownloadUrl": "http://fragcity.ir/maps/aim_redline_fp/3070253400.zip"
+  },
+  {
+    "WorkshopId": 3628046675,
+    "MapName": "am_map2",
+    "Size": 114213427,
+    "TimeUpdated": 1771335086,
+    "Manifest": "8931883843961174313",
+    "DownloadUrl": "http://fragcity.ir/maps/am_map2/3628046675.zip"
+  },
+  {
+    "WorkshopId": 3311527054,
+    "MapName": "de_dust2_unlimited_csgo",
+    "Size": 241585992,
+    "TimeUpdated": 1724418999,
+    "Manifest": "8430947289906492697",
+    "DownloadUrl": "http://fragcity.ir/maps/de_dut2_unlimited/3311527054.zip"
+  }
+]
