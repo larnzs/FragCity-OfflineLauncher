@@ -158,7 +158,7 @@ namespace CSserver_browser
         // ========== WORKSHOP ==========
         private void LoadWorkshopMapsForCheck()
         {
-            string jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "workshop_maps.json");
+            string jsonPath = AppDataPaths.GetFilePath("workshop_maps.json");
             if (File.Exists(jsonPath))
             {
                 try
@@ -269,7 +269,7 @@ namespace CSserver_browser
                         return;
                     }
 
-                    string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "workshop_maps.json");
+                    string localPath = AppDataPaths.GetFilePath("workshop_maps.json");
                     List<WorkshopMapItem> localList = new List<WorkshopMapItem>();
                     if (File.Exists(localPath))
                     {
@@ -314,7 +314,7 @@ namespace CSserver_browser
                 using (var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) })
                 {
                     string text = await client.GetStringAsync(url);
-                    string localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "announcement.txt");
+                    string localPath = AppDataPaths.GetFilePath("announcement.txt");
                     File.WriteAllText(localPath, text);
                     LoadAnnouncement();
                 }
@@ -323,8 +323,8 @@ namespace CSserver_browser
         }
 
         // ========== File management ==========
-        private string ServersFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "servers.json");
-        private string SavedServersFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "savedservers.json");
+        private string ServersFilePath => AppDataPaths.GetFilePath("servers.json");
+        private string SavedServersFilePath => AppDataPaths.GetFilePath("savedservers.json");
 
         private void LoadAllServers()
         {
@@ -631,7 +631,7 @@ namespace CSserver_browser
 
         private void LoadAnnouncement()
         {
-            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "announcement.txt");
+            string path = AppDataPaths.GetFilePath("announcement.txt");
             try
             {
                 if (File.Exists(path))
