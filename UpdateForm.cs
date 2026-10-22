@@ -88,7 +88,9 @@ namespace CSserver_browser
 
         private async Task PerformUpdateCheck()
         {
-            string checkUrl = appSettings.UpdateCheckUrl;
+            string checkUrl = !string.IsNullOrWhiteSpace(appSettings.UpdateCheckUrl)
+                ? appSettings.UpdateCheckUrl
+                : appSettings.VersionCheckUrl;
             if (string.IsNullOrEmpty(checkUrl))
             {
                 MessageBox.Show("Update check URL is not configured.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -148,7 +150,7 @@ namespace CSserver_browser
                     }
 
                     lblStatus.Text = "Extracting update...";
-                    string updateFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "UpdatePackage");
+                    string updateFolder = Path.Combine(AppDataPaths.RootDirectory, "UpdatePackage");
                     if (Directory.Exists(updateFolder))
                         Directory.Delete(updateFolder, true);
                     ZipFile.ExtractToDirectory(tempZip, updateFolder);
