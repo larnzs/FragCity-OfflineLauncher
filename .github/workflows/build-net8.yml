@@ -1,0 +1,47 @@
+name: Build Windows app
+
+on:
+  push:
+    branches: [ "build/net8-windows" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish single-file Windows x64 executable
+        run: >
+          dotnet publish "CSserver browser.csproj"
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output ./publish
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:AssemblyName=FragCity-OfflineLauncher
+          -p:DebugType=None
+          -p:DebugSymbols=false
+
+      - name: Include external proxy executable when present
+        shell: pwsh
+        run: |
+          if (Test-Path "./proxy.exe") {
+            Copy-Item "./proxy.exe" "./publish/proxy.exe"
+          }
+
+      - name: Upload Windows x64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: FragCity-OfflineLauncher-win-x64-net8
+          path: publish/**
+          if-no-files-found: error
