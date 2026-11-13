@@ -1,10 +1,13 @@
-name: Build Windows app
+name: Build and release Windows app
 
 on:
   push:
     branches: [ "build/net8-windows" ]
   pull_request:
     branches: [ "main" ]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -39,9 +42,20 @@ jobs:
             Copy-Item "./proxy.exe" "./publish/proxy.exe"
           }
 
-      - name: Upload Windows x64 build
+      - name: Upload Windows x64 build artifact
         uses: actions/upload-artifact@v4
         with:
           name: FragCity-OfflineLauncher-win-x64-net8
           path: publish/**
           if-no-files-found: error
+
+      - name: Publish public GitHub release
+        if: github.event_name == 'push' && success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: FragCity Offline Launcher v1.0.0
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: publish/**
+          fail_on_unmatched_files: true
