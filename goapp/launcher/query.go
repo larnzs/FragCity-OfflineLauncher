@@ -306,3 +306,74 @@ func parseServerAddress(input string, defaultPort int) (string, int, error) {
 	}
 	return "", 0, fmt.Errorf("no IP addresses found for %q", host)
 }
+
+
+// QueryPlayers implements the Source A2S_PLAYER challenge/response exchange.
+func QueryPlayers(ctx context.Context, ip string, port int) ([]PlayerInfo, error) {
+	conn, err := dialQuery(ctx, ip, port)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	challengeRequest := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF}
+	if _, err := conn.Write(challengeRequest); err != nil {
+		return nil, err
+	}
+
+	challengeResponse, err := readDatagram(conn)
+	if err != nil {
+		return nil, err
+	}
+	if len(challengeResponse) < 9 ||
+		binary.LittleEndian.Uint32(challengeResponse[:4]) != 0xFFFFFFFF ||
+		challengeResponse[4] != 0x41 {
+		return nil, errors.New("invalid A2S_PLAYER challenge response")
+	}
+
+	playerRequest := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x55}
+	playerRequest = append(playerRequest, challengeResponse[5:9]...)
+	if _, err := conn.Write(playerRequest); err != nil {
+		return nil, err
+	}
+
+	playerResponse, err := readDatagram(conn)
+	if err != nil {
+		return nil, err
+	}
+	if len(playerResponse) < 6 ||
+		binary.LittleEndian.Uint32(playerResponse[:4]) != 0xFFFFFFFF ||
+		playerResponse[4] != 0x44 {
+		return nil, errors.New("invalid A2S_PLAYER response")
+	}
+
+	reader := bytes.NewReader(playerResponse[5:])
+	count, err := reader.ReadByte()
+	if err != nil {
+		return nil, fmt.Errorf("read A2S_PLAYER count: %w", err)
+	}
+
+	players := make([]PlayerInfo, 0, int(count))
+	for i := 0; i < int(count); i++ {
+		index, readErr := reader.ReadByte()
+		if readErr != nil {
+			return nil, fmt.Errorf("read player %d index: %w", i, readErr)
+		}
+		name, readErr := readCString(reader)
+		if readErr != nil {
+			return nil, fmt.Errorf("read player %d name: %w", i, readErr)
+		}
+		var score int32
+		if readErr = binary.Read(reader, binary.LittleEndian, &score); readErr != nil {
+			return nil, fmt.Errorf("read player %d score: %w", i, readErr)
+		}
+		var duration float32
+		if readErr = binary.Read(reader, binary.LittleEndian, &duration); readErr != nil {
+			return nil, fmt.Errorf("read player %d duration: %w", i, readErr)
+		}
+		players = append(players, PlayerInfo{
+			Index: int(index), Name: name, Score: int(score), Duration: duration,
+		})
+	}
+	return players, nil
+}
