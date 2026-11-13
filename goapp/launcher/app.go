@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,17 +21,24 @@ import (
 )
 
 type App struct {
-	mu       sync.RWMutex
-	dataDir  string
-	internet []ServerConnectionData
-	personal []ServerConnectionData
+	mu        sync.RWMutex
+	dataDir   string
+	internet  []ServerConnectionData
+	personal  []ServerConnectionData
 	favorites []ServerConnectionData
-	history  []ServerConnectionData
-	settings AppSettings
+	history   []ServerConnectionData
+	settings  AppSettings
 
 	clientProxy *proxy.ClientProxy
 	serverProxy *proxy.ServerProxy
 	message     string
+
+	workshopMaps     []WorkshopMapItem
+	workshopCancel   context.CancelFunc
+	workshopDownload WorkshopDownloadState
+	announcement     string
+	steamID          string
+	acfURL           string
 }
 
 func NewApp(dataDir string) (*App, error) {
@@ -39,28 +48,36 @@ func NewApp(dataDir string) (*App, error) {
 	app := &App{
 		dataDir: dataDir,
 		settings: AppSettings{
-			GameQueryPort:          27015,
-			LocalPort:              27016,
-			ProxyPort:              27017,
-			RefreshIntervalSeconds: 15,
-			CurrentVersion:         "0.1.0",
+			GameQueryPort: 27015, LocalPort: 27016, ProxyPort: 27017,
+			RefreshIntervalSeconds: 15, CurrentVersion: "0.2.0",
 		},
-		message: "Ready. This launcher works with local server data and does not require an Internet connection for LAN play.",
+		message: "Ready. LAN play and UDP forwarding do not require Internet access.",
 	}
-	_ = readJSON(filepath.Join(dataDir, "servers.json"), &struct {
-		Internet *[]ServerConnectionData
-	}{Internet: &app.internet})
-	var saved SavedServersContainer
-	if err := readJSON(filepath.Join(dataDir, "savedservers.json"), &saved); err != nil && !errors.Is(err, os.ErrNotExist) {
-		app.message = "Saved server data could not be read; starting with empty saved lists."
-	}
-	app.personal = saved.Personal
-	app.favorites = saved.Favorites
-	app.history = saved.History
 	if err := readJSON(filepath.Join(dataDir, "settings.json"), &app.settings); err != nil && !errors.Is(err, os.ErrNotExist) {
 		app.message = "Settings could not be read; using defaults."
 	}
 	app.normalizeSettings()
+
+	var internet ServerInternetContainer
+	if err := readJSON(filepath.Join(dataDir, "servers.json"), &internet); err == nil {
+		app.internet = internet.Internet
+	} else if !errors.Is(err, os.ErrNotExist) {
+		app.message = "Server list could not be read; starting with an empty list."
+	}
+	var saved SavedServersContainer
+	if err := readJSON(filepath.Join(dataDir, "savedservers.json"), &saved); err == nil {
+		app.personal, app.favorites, app.history = saved.Personal, saved.Favorites, saved.History
+	} else if !errors.Is(err, os.ErrNotExist) {
+		app.message = "Saved server data could not be read; starting with empty saved lists."
+	}
+	if app.settings.WorkshopPath == "" {
+		app.settings.WorkshopPath = discoverWorkshopPath()
+	}
+	app.reloadWorkshopMaps()
+	app.loadAnnouncement()
+	app.loadACFURL()
+	_ = app.CopyPreparedACF()
+	app.steamID = readSteamID()
 	return app, nil
 }
 
@@ -83,7 +100,7 @@ func (a *App) normalizeSettings() {
 	if a.settings.LocalPort == 0 { a.settings.LocalPort = 27016 }
 	if a.settings.ProxyPort == 0 { a.settings.ProxyPort = 27017 }
 	if a.settings.RefreshIntervalSeconds <= 0 { a.settings.RefreshIntervalSeconds = 15 }
-	if a.settings.CurrentVersion == "" { a.settings.CurrentVersion = "0.1.0" }
+	if a.settings.CurrentVersion == "" { a.settings.CurrentVersion = "0.2.0" }
 }
 
 func atomicWrite(path string, data []byte) error {
@@ -107,7 +124,6 @@ func (a *App) saveLocked() error {
 	if err != nil { return err }
 	settingsJSON, err := json.MarshalIndent(a.settings, "", "  ")
 	if err != nil { return err }
-
 	if err := atomicWrite(filepath.Join(a.dataDir, "servers.json"), internetJSON); err != nil { return err }
 	if err := atomicWrite(filepath.Join(a.dataDir, "savedservers.json"), savedJSON); err != nil { return err }
 	return atomicWrite(filepath.Join(a.dataDir, "settings.json"), settingsJSON)
@@ -117,24 +133,28 @@ func cloneServers(input []ServerConnectionData) []ServerConnectionData {
 	return append([]ServerConnectionData(nil), input...)
 }
 
+func cloneMaps(input []WorkshopMapItem) []WorkshopMapItem {
+	return append([]WorkshopMapItem(nil), input...)
+}
+
 func (a *App) State() AppState {
 	a.mu.RLock()
 	state := AppState{
 		Internet: cloneServers(a.internet), Personal: cloneServers(a.personal),
 		Favorites: cloneServers(a.favorites), History: cloneServers(a.history),
-		Settings: a.settings, Message: a.message,
+		Settings: a.settings, Message: a.message, Announcement: a.announcement,
+		SteamID: a.steamID, WorkshopMaps: cloneMaps(a.workshopMaps),
+		WorkshopPath: a.settings.WorkshopPath, WorkshopDownload: a.workshopDownload,
+		ACFAvailable: a.acfURL != "",
 	}
 	client, server := a.clientProxy, a.serverProxy
 	a.mu.RUnlock()
-
 	if client != nil && client.IsRunning() {
-		state.ClientProxyRunning = true
-		state.ClientProxyAddress = client.LocalAddress()
+		state.ClientProxyRunning, state.ClientProxyAddress = true, client.LocalAddress()
 		state.ClientBytesIn, state.ClientBytesOut = client.Counters()
 	}
 	if server != nil && server.IsRunning() {
-		state.ServerProxyRunning = true
-		state.ServerProxyAddress = server.LocalAddress()
+		state.ServerProxyRunning, state.ServerProxyAddress = true, server.LocalAddress()
 		state.ServerBytesIn, state.ServerBytesOut, state.BlockedPublicPeers = server.Counters()
 	}
 	return state
@@ -153,10 +173,10 @@ func validPort(port int, allowZero bool) bool {
 
 func (a *App) AddServer(server ServerConnectionData) error {
 	if net.ParseIP(server.Ip) == nil {
-		return errors.New("enter a valid IPv4 or IPv6 address")
+		return errors.New("enter a valid IP address")
 	}
 	if !validPort(server.Port, false) || !validPort(server.ForwardingPort, true) || !validPort(server.ListeningPort, true) {
-		return errors.New("ports must be between 1 and 65535; forwarding and local ports may be left at 0 to use settings")
+		return errors.New("ports must be between 1 and 65535; forwarding and local ports can be 0 to use defaults")
 	}
 	if strings.TrimSpace(server.Name) == "" { server.Name = net.JoinHostPort(server.Ip, strconv.Itoa(server.Port)) }
 	if server.Map == "" { server.Map = "Unknown" }
@@ -166,12 +186,42 @@ func (a *App) AddServer(server ServerConnectionData) error {
 	defer a.mu.Unlock()
 	for _, existing := range a.personal {
 		if existing.Ip == server.Ip && existing.Port == server.Port {
-			return errors.New("that server is already in your personal list")
+			return errors.New("that server is already in your Personal list")
 		}
 	}
 	a.personal = append(a.personal, server)
-	a.message = "LAN server added to Personal."
+	a.message = "Server added to Personal."
 	return a.saveLocked()
+}
+
+func (a *App) AddServerFromAddress(ctx context.Context, address string) error {
+	a.mu.RLock()
+	defaultPort, localPort, forwardPort := a.settings.GameQueryPort, a.settings.LocalPort, a.settings.ProxyPort
+	a.mu.RUnlock()
+	ip, port, err := parseServerAddress(address, defaultPort)
+	if err != nil { return err }
+
+	server := ServerConnectionData{
+		Ip: ip, Port: port, ForwardingPort: forwardPort, ListeningPort: localPort,
+		Name: net.JoinHostPort(ip, strconv.Itoa(port)), Map: "Unknown", Ping: -1, Tags: "Official",
+	}
+	queryCtx, cancel := context.WithTimeout(ctx, 2500*time.Millisecond)
+	info, queryErr := QueryServerInfo(queryCtx, ip, port)
+	cancel()
+	if queryErr == nil {
+		server.Name, server.Map = info.Name, info.Map
+		server.Players, server.MaxPlayers = info.Players, info.MaxPlayers
+		server.Ping, server.HasPassword, server.IsSecure = info.Ping, info.HasPassword, info.IsSecure
+	}
+	rulesCtx, rulesCancel := context.WithTimeout(ctx, 1500*time.Millisecond)
+	rules, _ := QueryServerRules(rulesCtx, ip, port)
+	rulesCancel()
+	server.TickRate = rulesInt(rules, "tickrate", "sv_tickrate")
+	server.Tags = rulesString(rules, "Official", "sv_tags", "tags")
+	server.GameMode = rulesString(rules, "", "game_des", "GameMode", "sv_game_mode", "game_mode")
+	if server.Name == "" { server.Name = net.JoinHostPort(ip, strconv.Itoa(port)) }
+	if queryErr != nil { server.Name += " (Offline)" }
+	return a.AddServer(server)
 }
 
 func (a *App) RemoveServer(group, ip string, port int) error {
@@ -179,17 +229,18 @@ func (a *App) RemoveServer(group, ip string, port int) error {
 	defer a.mu.Unlock()
 	var list *[]ServerConnectionData
 	switch strings.ToLower(group) {
+	case "internet": list = &a.internet
 	case "personal": list = &a.personal
 	case "favorites": list = &a.favorites
 	case "history": list = &a.history
-	default: return errors.New("only Personal, Favorites, or History entries can be removed")
+	default: return errors.New("unknown server list")
 	}
 	kept := (*list)[:0]
-	for _, s := range *list {
-		if s.Ip != ip || s.Port != port { kept = append(kept, s) }
+	for _, server := range *list {
+		if server.Ip != ip || server.Port != port { kept = append(kept, server) }
 	}
 	*list = kept
-	a.message = "Server removed."
+	if a.clientProxy == nil { a.message = "Server removed." }
 	return a.saveLocked()
 }
 
@@ -230,8 +281,10 @@ func (a *App) UpdateSettings(settings AppSettings) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	settings.CurrentVersion = a.settings.CurrentVersion
+	if settings.WorkshopPath == "" { settings.WorkshopPath = a.settings.WorkshopPath }
 	a.settings = settings
 	a.message = "Settings saved."
+	a.refreshWorkshopInstalledLocked()
 	return a.saveLocked()
 }
 
@@ -249,13 +302,18 @@ func (a *App) findServerLocked(group, ip string, port int) (ServerConnectionData
 	case "favorites": return findServer(a.favorites, ip, port)
 	case "history": return findServer(a.history, ip, port)
 	}
-	for _, list := range [][]ServerConnectionData{a.internet, a.personal, a.favorites, a.history} {
-		if server, ok := findServer(list, ip, port); ok { return server, true }
-	}
 	return ServerConnectionData{}, false
 }
 
 func (a *App) Connect(group, ip string, port int) error {
+	return a.startClientTunnel(group, ip, port, true)
+}
+
+func (a *App) StartClientProxy(group, ip string, port int) error {
+	return a.startClientTunnel(group, ip, port, false)
+}
+
+func (a *App) startClientTunnel(group, ip string, port int, openSteam bool) error {
 	a.mu.RLock()
 	server, ok := a.findServerLocked(group, ip, port)
 	settings := a.settings
@@ -270,7 +328,6 @@ func (a *App) Connect(group, ip string, port int) error {
 	client, err := proxy.NewClientProxy(localPort, server.Ip, remotePort)
 	if err != nil { return err }
 	if err := client.Start(); err != nil { return err }
-
 	a.mu.Lock()
 	a.clientProxy = client
 	server.ConnectedAt = time.Now()
@@ -295,8 +352,10 @@ func (a *App) Connect(group, ip string, port int) error {
 		}
 		a.mu.Unlock()
 	}()
-	if err := launchSteam(localPort); err != nil {
-		a.setMessage(fmt.Sprintf("Tunnel is running on 127.0.0.1:%d. Steam could not be opened automatically: %v", localPort, err))
+	if openSteam {
+		if err := launchSteam(localPort); err != nil {
+			a.setMessage(fmt.Sprintf("Tunnel active on 127.0.0.1:%d. Steam could not be opened automatically: %v", localPort, err))
+		}
 	}
 	return nil
 }
@@ -354,13 +413,12 @@ func (a *App) RefreshServers(ctx context.Context) error {
 	all = append(all, a.favorites...)
 	all = append(all, a.history...)
 	a.mu.RUnlock()
-
 	unique := make(map[string]ServerConnectionData)
 	for _, server := range all {
 		key := net.JoinHostPort(server.Ip, strconv.Itoa(server.Port))
 		unique[key] = server
 	}
-	type result struct { key string; info ServerInfo; err error }
+	type result struct { key string; info ServerInfo; rules map[string]string; err error }
 	results := make(chan result, len(unique))
 	sem := make(chan struct{}, 16)
 	var wg sync.WaitGroup
@@ -375,30 +433,34 @@ func (a *App) RefreshServers(ctx context.Context) error {
 				return
 			}
 			defer func(){ <-sem }()
-			queryCtx, cancel := context.WithTimeout(ctx, 1800*time.Millisecond)
-			defer cancel()
+			queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			info, err := QueryServerInfo(queryCtx, server.Ip, server.Port)
-			results <- result{key: key, info: info, err: err}
+			cancel()
+			var rules map[string]string
+			if err == nil {
+				rulesCtx, rulesCancel := context.WithTimeout(ctx, 1200*time.Millisecond)
+				rules, _ = QueryServerRules(rulesCtx, server.Ip, server.Port)
+				rulesCancel()
+			}
+			results <- result{key: key, info: info, rules: rules, err: err}
 		}(key, server)
 	}
 	wg.Wait()
 	close(results)
-
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for result := range results {
-		if result.err != nil { continue }
 		update := func(list []ServerConnectionData) {
 			for i := range list {
 				key := net.JoinHostPort(list[i].Ip, strconv.Itoa(list[i].Port))
 				if key != result.key { continue }
-				list[i].Name = result.info.Name
-				list[i].Map = result.info.Map
-				list[i].Players = result.info.Players
-				list[i].MaxPlayers = result.info.MaxPlayers
-				list[i].HasPassword = result.info.HasPassword
-				list[i].IsSecure = result.info.IsSecure
-				list[i].Ping = result.info.Ping
+				if result.err != nil { list[i].Ping = -1; continue }
+				list[i].Name, list[i].Map = result.info.Name, result.info.Map
+				list[i].Players, list[i].MaxPlayers = result.info.Players, result.info.MaxPlayers
+				list[i].HasPassword, list[i].IsSecure, list[i].Ping = result.info.HasPassword, result.info.IsSecure, result.info.Ping
+				list[i].TickRate = rulesInt(result.rules, "tickrate", "sv_tickrate")
+				list[i].Tags = rulesString(result.rules, list[i].Tags, "sv_tags", "tags")
+				list[i].GameMode = rulesString(result.rules, list[i].GameMode, "game_des", "GameMode", "sv_game_mode", "game_mode")
 			}
 		}
 		update(a.internet); update(a.personal); update(a.favorites); update(a.history)
@@ -411,7 +473,177 @@ func (a *App) Players(ctx context.Context, ip string, port int) ([]PlayerInfo, e
 	return QueryPlayers(ctx, ip, port)
 }
 
+func (a *App) ExportServers(group string) ([]ServerConnectionData, error) {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	switch strings.ToLower(group) {
+	case "internet": return cloneServers(a.internet), nil
+	case "personal": return cloneServers(a.personal), nil
+	case "favorites": return cloneServers(a.favorites), nil
+	case "history": return cloneServers(a.history), nil
+	case "all":
+		all := cloneServers(a.internet)
+		all = append(all, a.personal...)
+		return all, nil
+	default: return nil, errors.New("unknown server list")
+	}
+}
+
+func (a *App) ImportServers(servers []ServerConnectionData) (int, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	added := 0
+	for _, server := range servers {
+		if net.ParseIP(server.Ip) == nil || !validPort(server.Port, false) { continue }
+		exists := false
+		for _, old := range a.personal {
+			if old.Ip == server.Ip && old.Port == server.Port { exists = true; break }
+		}
+		if !exists { a.personal = append(a.personal, server); added++ }
+	}
+	a.message = fmt.Sprintf("Imported %d server(s).", added)
+	return added, a.saveLocked()
+}
+
+func (a *App) SyncRemoteData(ctx context.Context) error {
+	a.mu.RLock()
+	settings := a.settings
+	a.mu.RUnlock()
+	client := &http.Client{Timeout: 10 * time.Second}
+	var notices []string
+	if settings.ServerUpdateUrl != "" {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, settings.ServerUpdateUrl, nil)
+		if err != nil { notices = append(notices, "server list URL invalid"); } else {
+			resp, requestErr := client.Do(req)
+			if requestErr != nil { notices = append(notices, "server list sync: "+requestErr.Error()) } else {
+				defer resp.Body.Close()
+				var remote RemoteServerContainer
+				if resp.StatusCode != http.StatusOK { notices = append(notices, fmt.Sprintf("server list sync returned HTTP %d", resp.StatusCode))
+				} else if decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 4<<20)).Decode(&remote); decodeErr != nil { notices = append(notices, "server list JSON: "+decodeErr.Error())
+				} else {
+					a.mu.Lock()
+					added := 0
+					for _, cfg := range remote.Internet {
+						ip := net.ParseIP(cfg.TargetIp)
+						if ip == nil || !validPort(cfg.GameQueryPort, false) { continue }
+						found := false
+						for _, existing := range a.internet {
+							if existing.Ip == ip.String() && existing.Port == cfg.GameQueryPort { found = true; break }
+						}
+						if !found {
+							a.internet = append(a.internet, ServerConnectionData{
+								Ip: ip.String(), Port: cfg.GameQueryPort, ForwardingPort: cfg.ForwardingPort,
+								ListeningPort: cfg.ListeningPort, Name: "Unknown", Map: "Unknown",
+								Ping: -1, Tags: "Official",
+							})
+							added++
+						}
+					}
+					a.message = fmt.Sprintf("Remote server sync added %d server(s).", added)
+					_ = a.saveLocked()
+					a.mu.Unlock()
+				}
+			}
+		}
+	}
+	if settings.WorkshopMapUpdateUrl != "" {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, settings.WorkshopMapUpdateUrl, nil)
+		if err != nil { notices = append(notices, "workshop map URL invalid") } else {
+			resp, requestErr := client.Do(req)
+			if requestErr != nil { notices = append(notices, "workshop map sync: "+requestErr.Error()) } else {
+				defer resp.Body.Close()
+				var remote []WorkshopMapItem
+				if resp.StatusCode != http.StatusOK { notices = append(notices, fmt.Sprintf("workshop map sync returned HTTP %d", resp.StatusCode))
+				} else if decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 8<<20)).Decode(&remote); decodeErr != nil { notices = append(notices, "workshop map JSON: "+decodeErr.Error())
+				} else {
+					a.mu.Lock()
+					byID := make(map[int64]bool)
+					for _, m := range a.workshopMaps { byID[m.WorkshopId] = true }
+					added := 0
+					for _, m := range remote {
+						if m.WorkshopId > 0 && m.MapName != "" && !byID[m.WorkshopId] {
+							a.workshopMaps = append(a.workshopMaps, m)
+							byID[m.WorkshopId] = true
+							added++
+						}
+					}
+					_ = a.saveWorkshopMapsLocked()
+					a.refreshWorkshopInstalledLocked()
+					a.message = fmt.Sprintf("Remote workshop sync added %d map(s).", added)
+					a.mu.Unlock()
+				}
+			}
+		}
+	}
+	if settings.AnnouncementUrl != "" {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, settings.AnnouncementUrl, nil)
+		if err == nil {
+			if resp, requestErr := client.Do(req); requestErr == nil {
+				body, readErr := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+				resp.Body.Close()
+				if readErr == nil && resp.StatusCode == http.StatusOK {
+					_ = atomicWrite(filepath.Join(a.dataDir, "announcement.txt"), body)
+					a.mu.Lock()
+					a.announcement = strings.TrimSpace(string(body))
+					a.mu.Unlock()
+				}
+			}
+		}
+	}
+	if len(notices) > 0 {
+		a.setMessage("Remote sync finished with warnings: " + strings.Join(notices, " · "))
+		return errors.New(strings.Join(notices, "; "))
+	}
+	return nil
+}
+
+func (a *App) loadAnnouncement() {
+	data, err := os.ReadFile(filepath.Join(a.dataDir, "announcement.txt"))
+	if err == nil { a.announcement = strings.TrimSpace(string(data)) }
+}
+
+func readSteamID() string {
+	if runtime.GOOS != "windows" { return "" }
+	output, err := exec.Command("reg.exe", "query", `HKCU\Software\Valve\Steam\ActiveProcess`, "/v", "SteamID").Output()
+	if err != nil { return "" }
+	fields := strings.Fields(string(output))
+	for i := len(fields)-1; i >= 0; i-- {
+		value := strings.TrimSpace(fields[i])
+		if strings.HasPrefix(strings.ToLower(value), "0x") {
+			if n, parseErr := strconv.ParseUint(value[2:], 16, 64); parseErr == nil { return strconv.FormatUint(n, 10) }
+		}
+		if n, parseErr := strconv.ParseUint(value, 10, 64); parseErr == nil { return strconv.FormatUint(n, 10) }
+	}
+	return ""
+}
+
+func discoverWorkshopPath() string {
+	if runtime.GOOS == "windows" {
+		output, err := exec.Command("reg.exe", "query", `HKCU\Software\Valve\Steam`, "/v", "SteamPath").Output()
+		if err == nil {
+			fields := strings.Fields(string(output))
+			if len(fields) > 0 {
+				steamPath := strings.ReplaceAll(fields[len(fields)-1], "/", string(os.PathSeparator))
+				candidate := filepath.Join(steamPath, "steamapps", "workshop")
+				if info, statErr := os.Stat(candidate); statErr == nil && info.IsDir() { return candidate }
+			}
+		}
+	}
+	candidates := []string{}
+	if runtime.GOOS == "windows" {
+		if pf := os.Getenv("ProgramFiles(x86)"); pf != "" { candidates = append(candidates, filepath.Join(pf, "Steam", "steamapps", "workshop")) }
+		if pf := os.Getenv("ProgramFiles"); pf != "" { candidates = append(candidates, filepath.Join(pf, "Steam", "steamapps", "workshop")) }
+	} else if home, err := os.UserHomeDir(); err == nil {
+		candidates = append(candidates, filepath.Join(home, ".steam", "steam", "steamapps", "workshop"))
+	}
+	for _, candidate := range candidates {
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() { return candidate }
+	}
+	return ""
+}
+
 func (a *App) Close() {
 	a.StopClientProxy()
 	a.StopServerProxy()
+	a.CancelWorkshopDownload()
 }

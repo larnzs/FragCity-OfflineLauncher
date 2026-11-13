@@ -23,7 +23,7 @@ import (
 	"fragcity/proxy"
 )
 
-//go:embed web/*
+//go:embed web/* data/*
 var embeddedWeb embed.FS
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 			runServer(os.Args[2:])
 			return
 		case "version", "--version", "-version":
-			fmt.Println("FragCity Offline Launcher Go 0.1.0")
+			fmt.Println("FragCity Offline Launcher Go 0.2.0")
 			return
 		}
 	}
@@ -90,6 +90,24 @@ func waitForShutdown(stop func()) {
 	stop()
 }
 
+func seedEmbeddedDefaults(dataDir string) error {
+	for _, name := range []string{"acf.json", "announcement.txt", "workshop_maps.json"} {
+		destination := filepath.Join(dataDir, name)
+		if _, err := os.Stat(destination); err == nil {
+			continue
+		}
+		data, err := embeddedWeb.ReadFile(filepath.ToSlash(filepath.Join("data", name)))
+		if err != nil {
+			if name == "announcement.txt" { continue }
+			return err
+		}
+		if err := os.WriteFile(destination, data, 0644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func runDesktop() {
 	executable, err := os.Executable()
 	if err != nil {
@@ -100,6 +118,7 @@ func runDesktop() {
 		dataDir = custom
 	}
 
+	if err := seedEmbeddedDefaults(dataDir); err != nil { log.Printf("Could not install bundled defaults: %v", err) }
 	app, err := launcher.NewApp(dataDir)
 	if err != nil {
 		log.Fatal(err)

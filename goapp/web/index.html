@@ -14,20 +14,34 @@
     <header class="topbar">
       <div class="brand">
         <div class="brand-mark">FC</div>
-        <div><div class="brand-name">FRAGCITY</div><div class="brand-sub">OFFLINE LAN LAUNCHER</div></div>
+        <div><div class="brand-name">FRAGCITY</div><div class="brand-sub">GO EDITION · OFFLINE LAN LAUNCHER</div></div>
       </div>
       <div class="top-actions">
         <span class="local-chip"><span class="pulse"></span> LOCAL CONTROL PANEL</span>
-        <button class="button ghost" id="refresh">Refresh servers</button>
+        <button class="button ghost" id="refresh">Refresh</button>
+        <button class="button ghost" id="sync">Sync remote lists</button>
       </div>
     </header>
+
+    <div class="announcement" id="announcement"><span class="announcement-icon">◆</span><span id="announcement-text">Ready · LAN play does not require an Internet connection.</span><span class="push"></span><span id="steam-id" class="steam-id"></span></div>
+
+    <nav class="main-nav">
+      <button class="nav-item active" data-view="servers-view">Server browser</button>
+      <button class="nav-item" data-view="workshop-view">Workshop manager</button>
+      <button class="nav-item" data-view="settings-view">Settings</button>
+      <span class="push"></span>
+      <button class="nav-utility" id="export">Export list</button>
+      <button class="nav-utility" id="import-open">Import list</button>
+      <button class="nav-utility" id="update-open">Check updates</button>
+      <input type="file" id="import-file" accept=".json,application/json" hidden>
+    </nav>
 
     <main>
       <section class="hero">
         <div>
-          <div class="eyebrow">COUNTER-STRIKE 2 · UDP RELAY</div>
+          <div class="eyebrow">COUNTER-STRIKE 2 · SOURCE UDP</div>
           <h1>Play on your <span>LAN.</span></h1>
-          <p>Server browser and two-way UDP forwarding, bundled into one Go application. No cloud relay or Internet connection is required for local play.</p>
+          <p>Server browser, Workshop tools and native bidirectional UDP forwarding — all inside one Go executable. No cloud relay is used for LAN play.</p>
         </div>
         <div class="hero-symbol"><div class="ring ring-one"></div><div class="ring ring-two"></div><div class="crosshair">+</div></div>
       </section>
@@ -42,88 +56,163 @@
         <article class="status-card">
           <div class="card-top"><span class="status-dot" id="server-dot"></span><span class="eyebrow">HOST TUNNEL</span><span class="push"></span><span class="status-label" id="server-status">STOPPED</span></div>
           <div class="status-title" id="server-address">0.0.0.0:—</div>
-          <div class="status-note">LAN clients → local game server</div>
+          <div class="status-note">Private/LAN clients → local game server</div>
           <div class="status-foot"><span id="server-traffic">0 bytes relayed</span><button class="text-button danger" id="stop-server" disabled>Stop relay</button></div>
         </article>
       </section>
 
-      <section class="content-grid">
-        <section class="panel servers-panel">
-          <div class="panel-heading">
-            <div><div class="eyebrow">SERVER DIRECTORY</div><h2>Servers</h2></div>
-            <button class="button primary small" id="add-open">＋ Add LAN server</button>
-          </div>
-          <div class="toolbar">
-            <div class="tabs" role="tablist">
-              <button class="tab active" data-tab="Internet">Internet</button>
-              <button class="tab" data-tab="Favorites">Favorites</button>
-              <button class="tab" data-tab="Personal">Personal</button>
-              <button class="tab" data-tab="History">History</button>
+      <section id="servers-view" class="view active">
+        <section class="content-grid">
+          <section class="panel servers-panel">
+            <div class="panel-heading">
+              <div><div class="eyebrow">SERVER DIRECTORY</div><h2>Servers</h2></div>
+              <button class="button primary small" id="add-open">＋ Add server</button>
             </div>
-            <input class="search" id="search" type="search" placeholder="Search name, IP, map…">
-          </div>
-          <div class="server-list" id="server-list"><div class="empty">Loading server directory…</div></div>
-          <div class="list-footer"><span id="server-count">0 servers</span><span>Saved locally on this PC</span></div>
+            <div class="toolbar">
+              <div class="tabs" role="tablist">
+                <button class="tab active" data-tab="Internet">All servers</button>
+                <button class="tab" data-tab="Favorites">Favorites</button>
+                <button class="tab" data-tab="Personal">Personal</button>
+                <button class="tab" data-tab="History">History</button>
+              </div>
+              <input class="search" id="search" type="search" placeholder="Search name, IP, map…">
+            </div>
+            <div class="server-list" id="server-list"><div class="empty">Loading server directory…</div></div>
+            <div class="list-footer"><span id="server-count">0 servers</span><span>Stored locally · Compatible with the C# JSON lists</span></div>
+          </section>
+
+          <aside class="side-column">
+            <section class="panel connect-panel">
+              <div class="eyebrow">QUICK CONNECT</div>
+              <h2>Join a server</h2>
+              <p class="muted">Select a server. Start the local UDP tunnel, then launch CS2 through Steam.</p>
+              <div class="selected-server" id="selected-server"><span class="selection-mark">◎</span><span>No server selected</span></div>
+              <div class="button-row">
+                <button class="button outline wide" id="start-client" disabled>Start tunnel</button>
+                <button class="button primary wide" id="connect" disabled>Connect with Steam ↗</button>
+              </div>
+              <div class="connect-hint">CS2 connects to <code>127.0.0.1</code> through your local UDP port.</div>
+            </section>
+
+            <section class="panel details-panel">
+              <div class="eyebrow">SERVER DETAILS</div>
+              <h2 id="detail-name">No server selected</h2>
+              <div class="detail-grid">
+                <div><small>ADDRESS</small><strong id="detail-address">—</strong></div>
+                <div><small>PLAYERS</small><strong id="detail-players">—</strong></div>
+                <div><small>MAP</small><strong id="detail-map">—</strong></div>
+                <div><small>PING</small><strong id="detail-ping">—</strong></div>
+                <div><small>TICKRATE</small><strong id="detail-tick">—</strong></div>
+                <div><small>SECURITY</small><strong id="detail-secure">—</strong></div>
+              </div>
+              <div class="detail-tags" id="detail-tags">Select a server to view its tags and game mode.</div>
+              <button class="button ghost wide" id="players-open" disabled>Show player list</button>
+            </section>
+          </aside>
         </section>
 
-        <aside class="side-column">
-          <section class="panel connect-panel">
-            <div class="eyebrow">QUICK CONNECT</div>
-            <h2>Join a server</h2>
-            <p class="muted">Select a server from the list. The launcher opens Steam and connects CS2 through the local UDP port.</p>
-            <div class="selected-server" id="selected-server"><span class="selection-mark">◎</span><span>No server selected</span></div>
-            <button class="button primary wide" id="connect" disabled>Connect with Steam <span>↗</span></button>
-            <div class="connect-hint">Uses <code>127.0.0.1</code> and the configured local port.</div>
-          </section>
+        <section class="panel host-panel host-panel-wide">
+          <div class="panel-heading">
+            <div><div class="eyebrow">LAN HOST MODE</div><h2>Forward clients to your dedicated server</h2></div>
+            <span class="lan-only">PRIVATE / LAN SOURCES ONLY</span>
+          </div>
+          <p class="muted">Run this on the PC hosting CS2. The relay binds to your LAN interface and forwards UDP datagrams to the local server. Public source IPs are rejected.</p>
+          <form id="host-form" class="host-form">
+            <label>Bind address<input id="bind-ip" value="0.0.0.0" spellcheck="false"></label>
+            <label>Dedicated server IP<input id="internal-ip" value="127.0.0.1" spellcheck="false"></label>
+            <label>Game server UDP port<input id="internal-port" type="number" min="1" max="65535" value="27015"></label>
+            <label>LAN forwarding UDP port<input id="forward-port" type="number" min="1" max="65535" value="27017"></label>
+            <button class="button outline" type="submit" id="start-server">Start LAN relay</button>
+          </form>
+          <div class="host-foot">Allow the forwarding UDP port in Windows Firewall on the Private network profile. Do not create a public router port-forward for LAN-only use.</div>
+        </section>
+      </section>
 
-          <section class="panel host-panel">
-            <div class="eyebrow">LAN HOST MODE</div>
-            <h2>Forward to game server</h2>
-            <p class="muted">Run this on the PC hosting the CS2 server. Only private/LAN client IPs are accepted.</p>
-            <form id="host-form" class="form-stack">
-              <label>Bind address<input id="bind-ip" value="0.0.0.0" spellcheck="false"></label>
-              <div class="two-fields">
-                <label>Game server IP<input id="internal-ip" value="127.0.0.1" spellcheck="false"></label>
-                <label>Game port<input id="internal-port" type="number" min="1" max="65535" value="27015"></label>
+      <section id="workshop-view" class="view">
+        <section class="panel workshop-panel">
+          <div class="panel-heading">
+            <div><div class="eyebrow">CS2 CONTENT</div><h2>Workshop map manager</h2></div>
+            <button class="button ghost small" id="workshop-refresh">Reload maps</button>
+          </div>
+          <p class="muted">Uses your local <code>workshop_maps.json</code> index. Downloads are optional; once a map is installed, LAN use does not need a web connection.</p>
+          <form id="workshop-path-form" class="path-form">
+            <label class="grow">Steam Workshop directory<input id="workshop-path" placeholder="…/Steam/steamapps/workshop"></label>
+            <button class="button outline" type="submit">Save directory</button>
+          </form>
+          <div class="toolbar workshop-toolbar">
+            <input class="search" id="map-search" type="search" placeholder="Search map name or Workshop ID…">
+            <span class="muted" id="map-count">0 maps indexed</span>
+            <span class="push"></span>
+            <button class="button ghost small" id="acf-install">Install ACF file</button>
+          </div>
+          <div class="workshop-layout">
+            <div class="map-list" id="map-list"><div class="empty">No workshop_maps.json index loaded.</div></div>
+            <aside class="map-details">
+              <div class="map-preview" id="map-preview"><span>FC</span></div>
+              <div class="eyebrow">SELECTED MAP</div>
+              <h3 id="map-name">No map selected</h3>
+              <div class="detail-grid compact">
+                <div><small>WORKSHOP ID</small><strong id="map-id">—</strong></div>
+                <div><small>SIZE</small><strong id="map-size">—</strong></div>
+                <div><small>UPDATED</small><strong id="map-updated">—</strong></div>
+                <div><small>STATUS</small><strong id="map-status">—</strong></div>
               </div>
-              <label>LAN forwarding port<input id="forward-port" type="number" min="1" max="65535" value="27017"></label>
-              <button class="button outline wide" type="submit" id="start-server">Start LAN relay</button>
-            </form>
-            <div class="host-foot">Allow this UDP port in Windows Firewall on the Private network profile.</div>
-          </section>
+              <p class="detail-tags" id="map-manifest">Manifest: —</p>
+              <button class="button primary wide" id="map-download" disabled>Download & install</button>
+              <button class="button ghost wide" id="map-cancel" disabled>Cancel download</button>
+              <div class="download-progress"><div class="progress-track"><span id="download-progress"></span></div><small id="download-message">No download running.</small></div>
+            </aside>
+          </div>
+        </section>
+      </section>
 
-          <section class="panel settings-panel">
-            <div class="settings-head"><div><div class="eyebrow">LOCAL CONFIGURATION</div><h2>Ports & settings</h2></div><span class="settings-icon">⚙</span></div>
-            <form id="settings-form" class="settings-fields">
-              <label>Game query port<input id="setting-query" type="number" min="1" max="65535"></label>
-              <label>Local client port<input id="setting-local" type="number" min="1" max="65535"></label>
-              <label>Default forwarding port<input id="setting-proxy" type="number" min="1" max="65535"></label>
-              <label>Refresh interval (seconds)<input id="setting-refresh" type="number" min="5" max="3600"></label>
-              <button class="button ghost wide" type="submit">Save settings</button>
-            </form>
-          </section>
-        </aside>
+      <section id="settings-view" class="view">
+        <section class="panel settings-page">
+          <div class="eyebrow">LOCAL CONFIGURATION</div><h2>Settings</h2>
+          <p class="muted">Ports and optional synchronization endpoints are stored next to the executable in <code>settings.json</code>. LAN play does not depend on any of these URLs.</p>
+          <form id="settings-form" class="settings-grid">
+            <label>Game query UDP port<input id="setting-query" type="number" min="1" max="65535"></label>
+            <label>Local client UDP port<input id="setting-local" type="number" min="1" max="65535"></label>
+            <label>Default forwarding UDP port<input id="setting-proxy" type="number" min="1" max="65535"></label>
+            <label>Refresh interval (seconds)<input id="setting-refresh" type="number" min="5" max="3600"></label>
+            <label class="check-label"><input id="setting-autorefresh" type="checkbox"> Enable automatic server refresh</label>
+            <label>Server list update URL<input id="setting-server-url" placeholder="https://…"></label>
+            <label>Workshop map index URL<input id="setting-workshop-url" placeholder="https://…"></label>
+            <label>Announcement URL<input id="setting-announcement-url" placeholder="https://…"></label>
+            <label>Update manifest URL<input id="setting-update-url" placeholder="https://…"></label>
+            <label>Version check URL (legacy)<input id="setting-version-url" placeholder="https://…"></label>
+            <label class="full-width">Workshop directory<input id="setting-workshop-path" placeholder="…/Steam/steamapps/workshop"></label>
+            <button class="button primary" type="submit">Save settings</button>
+          </form>
+          <div class="settings-warning">Remote sync, Workshop downloads and update checks use the URLs above. If your network is offline, the server lists saved on this PC and both local UDP relay modes still work.</div>
+        </section>
       </section>
 
       <footer class="footer">
-        <span><strong>FRAGCITY</strong> GO EDITION <span class="version">0.1.0</span></span>
-        <span>LAN-first · UDP only · No external relay</span>
+        <span><strong>FRAGCITY</strong> GO EDITION <span class="version">0.2.0</span></span>
+        <span>Native Go · UDP forwarding · Local-first · Windows x64</span>
       </footer>
     </main>
   </div>
 
   <dialog id="add-dialog">
     <form method="dialog" id="add-form">
-      <div class="dialog-head"><div><div class="eyebrow">MANUAL ENTRY</div><h2>Add a LAN server</h2></div><button class="close" value="cancel" aria-label="Close">×</button></div>
-      <label>Server name<input id="add-name" placeholder="My LAN server"></label>
-      <label>Server IP address<input id="add-ip" required placeholder="192.168.1.50" spellcheck="false"></label>
-      <div class="two-fields">
-        <label>Game query port<input id="add-port" type="number" min="1" max="65535" value="27015" required></label>
-        <label>Forwarding port<input id="add-forward" type="number" min="0" max="65535" value="27017"></label>
-      </div>
-      <label>Local connect port<input id="add-local" type="number" min="0" max="65535" value="27016"></label>
-      <div class="dialog-actions"><button class="button ghost" value="cancel">Cancel</button><button class="button primary" id="add-submit" value="default">Save server</button></div>
+      <div class="dialog-head"><div><div class="eyebrow">SERVER ENTRY</div><h2>Add a server</h2></div><button class="close" value="cancel" aria-label="Close">×</button></div>
+      <label>IP address or hostname (optional port)<input id="add-address" required placeholder="192.168.1.50 or cs.example.net:27015" spellcheck="false"></label>
+      <p class="dialog-hint">FragCity resolves the address, queries Source server information and rules, then saves it to Personal.</p>
+      <div class="dialog-actions"><button class="button ghost" value="cancel">Cancel</button><button class="button primary" id="add-submit" value="default">Query & save</button></div>
     </form>
+  </dialog>
+
+  <dialog id="players-dialog">
+    <div class="dialog-head"><div><div class="eyebrow">LIVE SERVER QUERY</div><h2>Players on server</h2><p class="muted" id="players-server"></p></div><button class="close" id="players-close">×</button></div>
+    <div class="players-list" id="players-list"><div class="empty">Select a server and query its players.</div></div>
+  </dialog>
+
+  <dialog id="update-dialog">
+    <div class="dialog-head"><div><div class="eyebrow">APPLICATION UPDATE</div><h2>Check for updates</h2></div><button class="close" id="update-close">×</button></div>
+    <p class="muted" id="update-message">Check the configured update manifest for a newer version.</p>
+    <div class="dialog-actions"><button class="button ghost" id="update-check">Check now</button><button class="button primary" id="update-download" disabled>Download package</button></div>
   </dialog>
 
   <div class="toast" id="toast" role="status"></div>

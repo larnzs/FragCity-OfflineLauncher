@@ -21,6 +21,10 @@ jobs:
         with:
           go-version: "1.23.x"
 
+      - name: Format Go packages
+        working-directory: goapp
+        run: gofmt -w .
+
       - name: Test Go packages
         working-directory: goapp
         run: go test ./...

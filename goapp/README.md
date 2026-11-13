@@ -1,75 +1,85 @@
 # FragCity Offline Launcher — Go edition
 
-This is the first Go migration branch of FragCity Offline Launcher. It replaces the separate `proxy.exe` child process with an in-process UDP relay and a local control panel bundled into a single Go executable.
+This is the primary Go implementation of FragCity. The launcher, browser interface, Steam Source queries, Workshop manager, update checker, and UDP forwarding engine are packaged into one Windows x64 executable.
 
-## Current migration scope
+## Included features
 
-Implemented in this branch:
+- Server browser with All, Favorites, Personal and History lists, filtering, server details, player/map counts, ping, VAC/password status, tickrate, game mode and tags.
+- Source A2S_INFO, A2S_RULES and A2S_PLAYER queries over UDP.
+- Add servers using an IP, hostname or host:port; remove entries; favorite servers; import/export JSON lists.
+- Client UDP relay: local CS2 UDP port to the selected host's forwarding port, with optional Steam launch.
+- Host UDP relay: LAN clients to a local dedicated server, with a separate return path per client. Public source IPs are rejected by default.
+- Workshop catalogue, installed-state detection, search, ZIP download/install, cancellation, safe extraction and ACF download/install.
+- Optional remote server/workshop/announcement synchronization.
+- Manual update manifest check and download to UpdatePackage. The running app is not overwritten; replacement remains a manual step.
+- Ports, auto-refresh, Workshop directory and remote URL settings.
+- Reads/writes existing PascalCase servers.json, savedservers.json and settings.json formats.
+- Embedded Go runtime, browser UI, default workshop data and map thumbnails; no .NET, Go install or external proxy.exe needed.
 
-- LAN server list, Personal, Favorites, and History lists.
-- Reads and writes the existing PascalCase `servers.json`, `savedservers.json`, and `settings.json` data formats.
-- Add/remove/favorite LAN servers.
-- Source-engine A2S_INFO server status query and A2S_PLAYER query.
-- Client UDP relay: local CS2 UDP port to a selected LAN host and forwarding port.
-- Host UDP relay: private/LAN clients to a local game-server IP and port, with a separate return socket per client.
-- LAN-only default: public source IPs are rejected by host mode.
-- Embedded local control panel; it binds only to 127.0.0.1 and uses a per-launch API token.
-- Windows x64 single-file build with CGO disabled; Go runtime is included in the executable.
+## Run
 
-Not yet migrated from the C# application:
+Double-click FragCity-Offline-Launcher.exe. It starts a loopback-only control panel and opens it in the default browser. The local API binds only to 127.0.0.1 and uses a fresh per-run token.
 
-- Workshop map download/installation and ACF management.
-- Remote server/workshop list synchronization, announcements, and the C# auto-updater.
-- The original native WinForms layout and its additional server detail/context-menu screens.
-
-The previous binary's source is not present in this repository. This Go version therefore implements its own plain bidirectional UDP forwarding path; run the Go client and Go host relay together rather than mixing this edition with an unknown legacy proxy binary until compatibility has been tested.
+If the browser does not open automatically, use the local URL printed by the app.
 
 ## LAN setup
 
-### On the PC hosting the CS2 dedicated server
+### Host PC
 
-Run the Go executable in server mode:
+1. Start FragCity on the PC running the CS2 dedicated server.
+2. Open Server browser → LAN Host Mode.
+3. Set the dedicated server's local IP and UDP game port (usually 127.0.0.1 and your CS2 game port).
+4. Choose a LAN forwarding port (for example 27017) and start the relay.
+5. Allow that UDP port in Windows Firewall on the Private network profile.
+
+You can also run this in PowerShell:
 
 ```powershell
 FragCity-Offline-Launcher.exe server --internal-ip 127.0.0.1 --internal 27015 --ip 0.0.0.0 --port 27017
 ```
 
-- `--internal-ip`: address where the dedicated server is listening (usually 127.0.0.1).
-- `--internal`: dedicated server's UDP game port.
-- `--ip`: local interface for the relay; use 0.0.0.0 to listen on available IPv4 interfaces.
-- `--port`: UDP port that LAN players send to.
+### Client PC
 
-Alternatively, open the desktop launcher and use **LAN Host Mode**.
+1. Connect both PCs to the same LAN.
+2. Open FragCity → Add server and enter the host's private LAN IP. Use the dedicated server query port (default 27015).
+3. Set the forwarding port to the host relay port (for example 27017). The local port (default 27016) must be free.
+4. Select the server and choose Connect with Steam.
 
-Allow the forwarding UDP port on the Windows Firewall **Private** profile. Do not create a public router port-forward for this LAN-only build.
+The launcher asks Steam to connect CS2 to 127.0.0.1 on the local port. The UDP data path uses no central server, cloud relay or Internet connection. Steam/CS2 may still have its own sign-in or offline-mode requirements.
 
-### On each LAN player's PC
+Direct CLI relay usage:
 
-Open the launcher, add a Personal server:
+```powershell
+# Client side
+FragCity-Offline-Launcher.exe client --local 27016 --port 27017 --target 192.168.1.50
 
-- IP: the host PC's private LAN IP, for example 192.168.1.50.
-- Game query port: the dedicated server game port (for example 27015).
-- Forwarding port: the host relay port (for example 27017).
-- Local connect port: a free local UDP port (default 27016).
+# Host side
+FragCity-Offline-Launcher.exe server --internal-ip 127.0.0.1 --internal 27015 --ip 0.0.0.0 --port 27017
+```
 
-Select the server and choose **Connect with Steam**. The launcher starts a local UDP relay and asks Steam to connect CS2 to 127.0.0.1 on the local port.
+## Local files
 
-Both PCs must be on the same LAN. No central service, cloud relay, or external server list is needed for this flow. Steam/CS2 itself must still be installed and configured to permit LAN play.
+Writable data is stored next to the executable: servers.json, savedservers.json, settings.json, workshop_maps.json, acf.json, announcement.txt and UpdatePackage/ (only created by the updater). Back these up before replacing the executable. Existing C# server and settings JSON can be reused.
 
 ## Build
 
-From this directory:
+Requires Go 1.23 or later. From this folder:
 
 ```powershell
+gofmt -w .
 go test ./...
 $env:CGO_ENABLED = "0"
 $env:GOOS = "windows"
 $env:GOARCH = "amd64"
-go build -trimpath -ldflags="-s -w" -o dist/FragCity-OfflineLauncher.exe .
+go build -trimpath -ldflags="-s -w" -o dist/FragCity-Offline-Launcher.exe .
 ```
 
-The GitHub Actions workflow builds and uploads `FragCity-OfflineLauncher.exe` for Windows x64. The executable has no external Go DLL/runtime dependency; the UI opens in the system browser using the embedded HTML/CSS/JS files.
+GitHub Actions runs the package tests and produces a single-file Windows x64 artifact.
 
-## Important
+## Networking notes
 
-This relay forwards UDP datagrams only. The host intentionally accepts only private, loopback, and link-local source addresses by default. The Go rewrite has not yet been tested against a live CS2 dedicated server or every legacy proxy behavior; test on a private LAN before using it in production.
+- The relay forwards UDP datagrams, not arbitrary TCP traffic.
+- Host mode accepts private, loopback and link-local source IPs only. Do not expose it with a public router port-forward.
+- Ensure the chosen ports are free and allow the host relay through Windows Firewall on the Private profile.
+- The old proxy.exe source was not included in the repository. The Go edition implements a new UDP forwarding path; run the Go version at both ends instead of mixing it with the unknown legacy binary.
+- CI tests cover UDP request/reply forwarding, legacy JSON compatibility and ZIP traversal protection. A real multi-PC CS2 dedicated-server session is still needed for full end-to-end validation.
