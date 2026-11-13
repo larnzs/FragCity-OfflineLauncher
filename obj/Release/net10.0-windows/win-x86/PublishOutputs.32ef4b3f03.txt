@@ -1,2 +1,0 @@
-C:\latest\CSserver browser.pdb
-C:\latest\CSserver browser.exe

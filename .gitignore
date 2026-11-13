@@ -1,0 +1,25 @@
+# Go build output
+/dist/
+/*.exe
+/*.test
+*.out
+
+# Local configuration/data created by the application
+/settings.json
+/servers.json
+/savedservers.json
+/workshop_maps.json
+/acf.json
+/announcement.txt
+/appworkshop_730.acf
+/UpdatePackage/
+
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
